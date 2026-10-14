@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ride Math - app</title>
+<link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css">
+<style>
+  :root { --accent: #2a4a8a; }
+  h1 { color: var(--accent); margin-bottom: 0.2em; }
+  .tag { color: var(--accent); font-style: italic; }
+  .card { border: 1px solid #ddd; border-left: 4px solid var(--accent); padding: 1em 1.2em; margin: 1.2em 0; border-radius: 4px; }
+  .big { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin-top: 0.8em; }
+  .err { color: #b00; font-weight: 700; }
+  label { display: block; margin-top: 0.6em; font-size: 0.9em; }
+  input, select { max-width: 12em; }
+  .foot { margin-top: 2.5em; font-size: 0.85em; color: #777; }
+</style>
+</head>
+<body>
+<h1>Ride Math</h1>
+<p class="tag">Sticker audit, watt-hour truth and the charge clock - labeled norms, honest arithmetic.</p>
+
+<div class="card">
+  <h3>The sticker audit</h3>
+  <label for="r-sticker">Sticker range (miles)</label>
+  <input id="r-sticker" type="number" step="any" value="60">
+  <label for="r-lb">Rider weight (lb)</label>
+  <input id="r-lb" type="number" step="any" value="210">
+  <label for="r-terrain">Terrain</label>
+  <select id="r-terrain">
+    <option value="flat">flat</option>
+    <option value="rolling" selected>rolling</option>
+    <option value="hilly">hilly</option>
+  </select>
+  <p class="big" id="r-out"></p>
+</div>
+
+<div class="card">
+  <h3>The watt-hour truth</h3>
+  <label for="w-wh">Battery (Wh)</label>
+  <input id="w-wh" type="number" step="any" value="500">
+  <label for="w-assist">Assist level</label>
+  <select id="w-assist">
+    <option value="eco">eco</option>
+    <option value="tour">tour</option>
+    <option value="sport" selected>sport</option>
+    <option value="turbo">turbo</option>
+  </select>
+  <p class="big" id="w-out"></p>
+</div>
+
+<div class="card">
+  <h3>The charge clock</h3>
+  <label for="c-wh">Battery (Wh)</label>
+  <input id="c-wh" type="number" step="any" value="500">
+  <label for="c-w">Charger (W)</label>
+  <input id="c-w" type="number" step="any" value="100">
+  <p class="big" id="c-out"></p>
+</div>
+
+<p class="foot">Derates are labeled norms - the sticker rider weighed 150, and the last 15% of the charge is always the slow part.</p>
+
+<script src="engine.js"></script>
+<script>
+function g(id){ return document.getElementById(id); }
+function v(id){ var n = parseFloat(g(id).value); return isNaN(n) ? NaN : n; }
+function show(id, s, bad){ var el = g(id); el.textContent = s; el.className = bad ? "err big" : "big"; }
+
+function runRange(){
+  var args = [v("r-sticker"), v("r-lb"), g("r-terrain").value];
+  var r = RideMath.rangePlan.apply(null, args);
+  if (r.error) return show("r-out", r.error, true);
+  show("r-out", RideMath.renderRange.apply(null, [r].concat(args)), false);
+}
+function runWatt(){
+  var args = [v("w-wh"), g("w-assist").value];
+  var r = RideMath.wattPlan.apply(null, args);
+  if (r.error) return show("w-out", r.error, true);
+  show("w-out", RideMath.renderWatt.apply(null, [r].concat(args)), false);
+}
+function runCharge(){
+  var args = [v("c-wh"), v("c-w")];
+  var r = RideMath.chargePlan.apply(null, args);
+  if (r.error) return show("c-out", r.error, true);
+  show("c-out", RideMath.renderCharge.apply(null, [r].concat(args)), false);
+}
+["r-sticker","r-lb","r-terrain"].forEach(function(id){ g(id).addEventListener("input", runRange); g(id).addEventListener("change", runRange); });
+["w-wh","w-assist"].forEach(function(id){ g(id).addEventListener("input", runWatt); g(id).addEventListener("change", runWatt); });
+["c-wh","c-w"].forEach(function(id){ g(id).addEventListener("input", runCharge); g(id).addEventListener("change", runCharge); });
+runRange(); runWatt(); runCharge();
+</script>
+</body>
+</html>
